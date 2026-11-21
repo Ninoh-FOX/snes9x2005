@@ -208,6 +208,7 @@ typedef struct
    /* Fixes for individual games */
    bool     StarfoxHack;
    bool     WinterGold;
+   uint8_t  IRQPendCount; /* instructions an IRQ waits before it is taken */
    bool     BS; /* Japanese Satellite System games. */
    bool     JustifierMaster;
    bool     Justifier;

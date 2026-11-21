@@ -394,7 +394,7 @@ void S9xSetIRQ(uint32_t source)
 {
    CPU.IRQActive |= source;
    CPU.Flags |= IRQ_PENDING_FLAG;
-   CPU.IRQCycleCount = 3;
+   CPU.IRQCycleCount = Settings.IRQPendCount;
    if (CPU.WaitingForInterrupt)
    {
       /* Force IRQ to trigger immediately after WAI -

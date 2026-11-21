@@ -2692,6 +2692,16 @@ void ApplyROMFixes(void)
    /* Specific game fixes */
    Settings.StarfoxHack = match_na("STAR FOX") || match_na("STAR WING");
    Settings.WinterGold = match_na("FX SKIING NINTENDO 96") || match_na("DIRT RACER") || Settings.StarfoxHack;
+
+   /* IRQs are taken at the next instruction, as in snes9x2010 (the old fixed
+    * delay of 3 instructions made Yoshi's Island unblank one line late from
+    * its H-IRQ: flickering black line at the top). Games that need a delay
+    * keep the snes9x2010 values. */
+   Settings.IRQPendCount = 0;
+   if (match_na("TRAVERSE") || match_na("BATTLE BLAZE"))
+      Settings.IRQPendCount = 1;
+   else if (match_na("Aero the AcroBat 2"))
+      Settings.IRQPendCount = 2;
    Settings.HBlankStart = (256 * Settings.H_Max) / SNES_HCOUNTER_MAX;
 
    /* CPU timing hacks */
