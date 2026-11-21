@@ -292,7 +292,20 @@ else ifeq ($(platform), miyoo)
 	FLAGS += -fomit-frame-pointer -ffast-math -march=armv5te -mtune=arm926ej-s
 	FLAGS += -DFAST_ALIGNED_LSB_WORD_ACCESS -fno-unroll-loops
 
-# (armv7 a7, hard point, neon based) ### 
+# Miyoo Mini / Mini Plus (Cortex-A7, hard float, NEON)
+else ifeq ($(platform), miyoomini)
+	TARGET := $(TARGET_NAME)_libretro.so
+	CROSS_COMPILE ?= /opt/miyoomini-toolchain/usr/bin/arm-linux-gnueabihf-
+	CC = $(CROSS_COMPILE)gcc
+	CXX = $(CROSS_COMPILE)g++
+	AR = $(CROSS_COMPILE)ar
+	fpic := -fPIC
+	SHARED := -shared -Wl,--no-undefined -Wl,--version-script=link.T -Wl,--gc-sections
+	FLAGS += -marm -mcpu=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard
+	FLAGS += -fomit-frame-pointer -fdata-sections -ffunction-sections
+	FLAGS += -DFAST_ALIGNED_LSB_WORD_ACCESS -DFX_SWITCH_DISPATCH
+
+# (armv7 a7, hard point, neon based) ###
 # NESC, SNESC, C64 mini 
 else ifeq ($(platform), classic_armv7_a7)
 	TARGET := $(TARGET_NAME)_libretro.so
