@@ -2,6 +2,11 @@
 
 #include "fxemu.h"
 #include "fxinst.h"
+#ifdef FX_SWITCH_DISPATCH
+/* the opcode bodies must be inlined into the switch in fx_run */
+#undef INLINE
+#define INLINE inline __attribute__((always_inline))
+#endif
 #include <string.h>
 
 #include <retro_inline.h>
@@ -3345,6 +3350,32 @@ static INLINE void fx_sm_r15(void)
 
 /*** GSU executions functions ***/
 
+#ifdef FX_SWITCH_DISPATCH
+extern void (*fx_apfOpcodeTable[])(void);
+/* Same instructions as FX_STEP through the table, but dispatched with a
+ * switch so the (static INLINE) opcode bodies are inlined into this loop:
+ * no call/return per GSU instruction, and the counter lives in a register.
+ * GSU.vCounter ends with the same value as the original loop: fx_stop sets
+ * it to 0 (and clears G); running out of instructions leaves it at ~0u. */
+uint32_t fx_run(uint32_t nInstructions)
+{
+   uint32_t vCount = nInstructions;
+   GSU.vCounter = nInstructions;
+   READR14;
+   while (TF(G) && (vCount-- > 0))
+   {
+      uint32_t vIndex = (GSU.vStatusReg & 0x300) | (uint32_t) PIPE;
+      FETCHPIPE;
+      switch (vIndex)
+      {
+#include "fxswitch.h"
+      }
+   }
+   if (TF(G))
+      GSU.vCounter = vCount;
+   return nInstructions - GSU.vInstCount;
+}
+#else
 uint32_t fx_run(uint32_t nInstructions)
 {
    GSU.vCounter = nInstructions;
@@ -3353,6 +3384,7 @@ uint32_t fx_run(uint32_t nInstructions)
       FX_STEP;
    return nInstructions - GSU.vInstCount;
 }
+#endif
 
 /*** Special table for the different plot configurations ***/
 void (*fx_apfPlotTable[])(void) =
