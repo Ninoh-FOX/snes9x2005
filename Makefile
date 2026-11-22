@@ -296,8 +296,19 @@ else ifeq ($(platform), miyoo)
 else ifeq ($(platform), miyoomini)
 	TARGET := $(TARGET_NAME)_libretro.so
 	CROSS_COMPILE ?= /opt/miyoomini-toolchain/usr/bin/arm-linux-gnueabihf-
-	CC = $(CROSS_COMPILE)gcc
-	CXX = $(CROSS_COMPILE)g++
+	# PGO=1 (default) uses the profile in pgo/miyoomini/profile (recorded with the
+	# blargg APU: build snes9x2005_plus with USE_BLARGG_APU=1), PGO=generate records
+	# a new one (see pgo/miyoomini/README.md), PGO=0 builds without it. LTO always.
+	PGO ?= 1
+	ifeq ($(PGO), 1)
+		MM_FLAGS := -fprofile-use=$(CURDIR)/pgo/miyoomini/profile -fprofile-correction -Wno-coverage-mismatch
+	else ifeq ($(PGO), generate)
+		MM_FLAGS := -fprofile-generate=$(or $(PGO_DIR),/tmp/pgo_snes)
+	endif
+	MM_FLAGS += -flto=8 -fuse-linker-plugin
+	# flags go in CC because the link rule does not use CFLAGS (LTO and PGO need them there too)
+	CC = $(CROSS_COMPILE)gcc $(MM_FLAGS)
+	CXX = $(CROSS_COMPILE)g++ $(MM_FLAGS)
 	AR = $(CROSS_COMPILE)ar
 	fpic := -fPIC
 	SHARED := -shared -Wl,--no-undefined -Wl,--version-script=link.T -Wl,--gc-sections
@@ -667,6 +678,8 @@ endif
 
 clean:
 	rm -f $(TARGET) $(OBJECTS)
+	# objects of both APUs, whatever USE_BLARGG_APU was given to clean
+	rm -f $(CORE_DIR)/apu_blargg.o $(CORE_DIR)/apu.o $(CORE_DIR)/soundux.o $(CORE_DIR)/spc700.o
 
 .PHONY: clean
 endif
